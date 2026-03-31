@@ -9,7 +9,7 @@ Imagine the following scenario:
 
 The transformers package offers you the option to customize generation with a list of "LogitsProcessors", which encapsulate functions which have the previous tokens in a beam and the current logits as arguments. However, if you want to consider the prefix every time, this can become inefficient: if your function has complexity K on a sequence of n tokens, then this approach has a complexity of approx. K*n^2. For very long texts, this will hurt!
 
-So you will probably make your function such that it is "online": it can reuse previous work, so that updating it when adding a new token to a sequence is faster than rerunning on the whole previous sequence.
+So you will probably make your function such that it is "incremental": it can reuse previous work, so that updating it when adding a new token to a sequence is faster than rerunning on the whole previous sequence.
 
 But, the LogitsProcessor API gives you a beam's tokens, it does not give you a beam's "parent" -- i.e., that this beam is obtained by adding a particular token to a particular beam you have seen on the previous step. There probably is a way to get this in the transformers library already, but I'm a noob and didn't see it -- so I made one!
 
@@ -30,3 +30,4 @@ Naively, to check which beam is the parent of which beam needs checking the corr
 Write something in the _doWork function to encode whatever it is you need doing to the logits.
 
 Currently, this does nothing. It can print them though if you select the print_beams flag, together with the beam recipes. Much nice, very zen, to see the texts as they evolve (but don't do this except for debugging, reprinting sequences as they are generated token by token is a slow operation ...)
+

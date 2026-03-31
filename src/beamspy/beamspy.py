@@ -6,6 +6,7 @@ class _BeamSpyInternal:
         self._beamTree = {}
         self._beams = {}
         self._len = 0
+        self._prompt_len = None
         self._tokenizer = tokenizer
         self._print_recipes = print_recipes
         self._print_beams = print_beams
@@ -69,25 +70,33 @@ class _BeamSpyInternal:
         return retq
     def update(self, input_ids, batch_id, num_beams):
         input_ids = input_ids[batch_id*num_beams:(batch_id*num_beams+num_beams)]
+        if self._prompt_len is None:
+            self._prompt_len = input_ids.shape[1]
+        input_ids = input_ids[:, self._prompt_len:]
         beam_len = input_ids.shape[1]
         if 0 == beam_len:
             self._beams = {k: [None, None] for k in range(num_beams)}
+            recipes = [(None, None) for k in range(num_beams)]
         else:
             self._len += 1
             beam_parents = self.identifyBeams(input_ids)
             self._beams = {k: [self._beams.get(parent), input_ids[k,-1].tolist()] for k, parent in enumerate(beam_parents)}
-        recipes = [(p, input_ids[k,-1].tolist()) for k, p in enumerate(beam_parents)]
+            recipes = [(p, input_ids[k,-1].tolist()) for k, p in enumerate(beam_parents)]
         if self._print_beams or self._print_recipes:
             print("----")
             for k, recipe in enumerate(recipes):
                 beam_parent_idx, token = recipe
                 aux = ""
                 if self._print_recipes:
-                    aux += "%d + %d" % (beam_parent_idx, token)
+                    if beam_parent_idx is None:
+                        aux += "None + None"
+                    else:
+                        aux += "%d + %d (%s)" % (beam_parent_idx, token, self._tokenizer.decode([token]))
                 if self._print_beams:
                     if self._print_recipes:
                         aux += ": "
-                    aux += "%s" % str(self._followBeam(self._tokenizer.decode(self._beams[k])))
+                    print()
+                    aux += "%s" % str(self._tokenizer.decode(self._followBeam(self._beams[k])))
                 print(aux)                
         return recipes
     def _followBeam(self, beam):
@@ -123,7 +132,7 @@ class BeamSpy(LogitsProcessor):
         The recipes parameter should be interpreted as follows:
             - the recipes list has an element for each text in the input batch.
             - therefore, for each text in the input batch there is a list of recipes.
-            - for a text in the batch, if the j-th recipe has beam_parent_idx i and token x, it means that the currently j-th likely beam was obtained by appending x to what was previously the i-th likely beam.
+            - for a text in the batch, if the j-th recipe has beam_parent_idx i and token x, it means that the currently j-th likely beam was obtained by appending x to what was previously the i-th likely beam. Usually, the elements of a recipe are integers. The exeception is the (None, None) recipe corresponding to the start of the beam, before any tokens were generated.
         
         The recommendation is for your function to keep track of the work it did for the current 0..m-th likeliest beams, and upon receiving recipes for beam updates, use the beam_parent_idx to select which cached work to reuse and for which beam.
         """
