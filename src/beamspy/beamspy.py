@@ -104,7 +104,7 @@ class _BeamSpyInternal:
 class BeamSpy(LogitsProcessor):
     def __init__(self, batch_size, tokenizer, print_recipes=False, print_beams=False):
         super().__init__()
-        self._batch_size = textCount
+        self._batch_size = batch_size
         self._tokenizer = tokenizer
         self._print_beams = print_beams
         self._print_recipes = print_recipes or self._print_beams

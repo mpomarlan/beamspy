@@ -17,9 +17,14 @@ classifiers = [
 ]
 urls = { "Documentation" = "https://github.com/mpomarlan/beamspy/README.md" }
 dependencies = ["torch", "transformers"]
-dynamic = ["version", "description"]
+#dynamic = ["version", "description"]
+dynamic = ["version"]
 
 [build-system]
 requires = ["setuptools >= 77.0.3"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "beamspy.__version__"}
+#description = {attr = "beamspy.__description__"}
 
